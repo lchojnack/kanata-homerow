@@ -1,28 +1,113 @@
-;; defsrc is still necessary
+;; Advanced homerow mods with automatic typing layer
+;; From: https://github.com/jtroo/kanata/discussions/1656
 (defcfg
- process-unmapped-keys yes
+  process-unmapped-keys yes
 )
 
 (defsrc
- a s d f j k l ;
+  a s d f g h j k l ;
+  q w e r t y u i o p
+  z x c v b n m , . /
+  caps spc
+)
+
+(defvirtualkeys
+  to-base (layer-switch base)
 )
 
 (defvar
- tap-time 150
- hold-time 200
+  tot 220  ;; tot=time out tap
+)
+
+;; Template for homerow mods
+(deftemplate homerowmod (timeouttap timeouthold keytap keyhold)
+  (tap-hold $timeouttap $timeouthold
+    (multi $keytap @.tp)
+    $keyhold
+  )
+)
+
+;; Template for filtered homerow mods (problematic bigrams)
+(deftemplate homerowmodfiltered (timeouttap timeouthold keytap keyhold typinglist)
+  (tap-hold-release-keys $timeouttap $timeouthold
+    (multi $keytap @.tp)
+    $keyhold
+    $typinglist
+  )
 )
 
 (defalias
- a (multi f24 (tap-hold $tap-time $hold-time a lmet))
- s (multi f24 (tap-hold $tap-time $hold-time s lalt))
- d (multi f24 (tap-hold $tap-time $hold-time d lctl))
- f (multi f24 (tap-hold $tap-time $hold-time f lsft))
- j (multi f24 (tap-hold $tap-time $hold-time j rsft))
- k (multi f24 (tap-hold $tap-time $hold-time k rctl))
- l (multi f24 (tap-hold $tap-time $hold-time l lalt))
- ; (multi f24 (tap-hold $tap-time $hold-time ; lmet))
+  ;; Typing layer switch - activates typing layer and returns to base after 55ms idle
+  .tp (switch
+    () (multi
+      (layer-switch typing)
+      (on-idle 55 tap-vkey to-base)
+    ) break
+  )
+  ;; Spacebar exits typing layer to allow uppercase after sentence breaks
+  .spc-typing (multi (layer-switch base) spc)
+
+  ;; Mouse layer activation - click caps to switch to mouse control
+  mse (layer-switch mouse)
+  ;; Switch back to base layer
+  tobase (layer-switch base)
+
+  ;; Mouse movement speeds
+  fst (movemouse-speed 200)
+  slw (movemouse-speed 50)
+  vsl (movemouse-speed 25)
+
+  ;; Mouse wheel scrolling
+  mwu (mwheel-up 50 120)
+  mwd (mwheel-down 50 120)
+  mwl (mwheel-left 50 120)
+  mwr (mwheel-right 50 120)
+
+  ;; Mouse cursor movement
+  ms↑ (movemouse-up 4 4)
+  ms← (movemouse-left 4 4)
+  ms↓ (movemouse-down 4 4)
+  ms→ (movemouse-right 4 4)
 )
 
+;; Base layer with homerow mods - proper GACS timing
 (deflayer base
- @a @s @d @f @j @k @l @;
+  (t! homerowmodfiltered $tot 450 a lmet (s))  ;; Meta - slowest (least used)
+  (t! homerowmodfiltered $tot 400 s lalt (a))  ;; Alt
+  (t! homerowmod $tot 300 d lctl)  ;; Ctrl
+  (t! homerowmod $tot 160 f lsft)  ;; Shift - fastest (most used)
+  g
+  h
+  (t! homerowmod $tot 160 j rsft)  ;; Shift - fastest (most used)
+  (t! homerowmodfiltered $tot 300 k rctl (o))  ;; Ctrl
+  (t! homerowmodfiltered $tot 400 l ralt (i))  ;; Alt
+  (t! homerowmod $tot 450 ; rmet)  ;; Meta - slowest (least used)
+
+  (multi q @.tp) (multi w @.tp) (multi e @.tp) (multi r @.tp) (multi t @.tp)
+  (multi y @.tp) (multi u @.tp) (multi i @.tp) (multi o @.tp) (multi p @.tp)
+
+  (multi z @.tp) (multi x @.tp) (multi c @.tp) (multi v @.tp)
+  (multi b @.tp) (multi n @.tp) (multi m @.tp) (multi , @.tp) (multi . @.tp) (multi / @.tp)
+
+  @mse  ;; caps: hold=mouse layer
+  @.spc-typing
+)
+
+;; Typing layer - no homerow mods, just plain letters
+(deflayer typing
+  a s d f g h j k l ;
+  q w e r t y u i o p
+  z x c v b n m , . /
+  @mse  ;; caps: hold=mouse layer
+  spc
+)
+
+;; Mouse control layer - click caps lock to exit
+;; j/k/l/; for mouse movement, n/m for left/right click
+(deflayer mouse
+  XX XX XX XX XX XX @ms← @ms↓ @ms↑ @ms→
+  XX XX XX XX XX XX XX XX XX XX
+  XX XX XX XX XX mlft mrgt XX XX XX
+  @tobase  ;; click caps to exit mouse layer
+  XX
 )
