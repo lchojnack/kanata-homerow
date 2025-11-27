@@ -2,6 +2,12 @@
 
 set -e
 
+# Parse command line options
+RESTART=false
+if [ "$1" == "--restart" ] || [ "$1" == "-r" ]; then
+    RESTART=true
+fi
+
 echo "Installing Kanata home row mods configuration..."
 
 # Check if kanata is installed
@@ -28,10 +34,16 @@ cp kanata.service "$HOME/.config/systemd/user/kanata.service"
 echo "Reloading systemd daemon..."
 systemctl --user daemon-reload
 
-# Enable and start the service
-echo "Enabling and starting kanata service..."
-systemctl --user enable kanata.service
-systemctl --user start kanata.service
+# Enable and start/restart the service
+if [ "$RESTART" = true ]; then
+    echo "Enabling and restarting kanata service..."
+    systemctl --user enable kanata.service
+    systemctl --user restart kanata.service
+else
+    echo "Enabling and starting kanata service..."
+    systemctl --user enable kanata.service
+    systemctl --user start kanata.service
+fi
 
 # Check service status
 echo ""

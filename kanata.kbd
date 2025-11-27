@@ -63,11 +63,11 @@
   mwl (mwheel-left 50 120)
   mwr (mwheel-right 50 120)
 
-  ;; Mouse cursor movement
-  ms↑ (movemouse-up 4 4)
-  ms← (movemouse-left 4 4)
-  ms↓ (movemouse-down 4 4)
-  ms→ (movemouse-right 4 4)
+  ;; Mouse cursor movement (balanced speed: 6 pixels every 3ms)
+  ms↑ (movemouse-up 6 3)
+  ms← (movemouse-left 6 3)
+  ms↓ (movemouse-down 6 3)
+  ms→ (movemouse-right 6 3)
 )
 
 ;; Base layer with homerow mods - proper GACS timing
@@ -103,11 +103,11 @@
 )
 
 ;; Mouse control layer - click caps lock to exit
-;; j/k/l/; for mouse movement, n/m for left/right click
+;; j/k/l/; for mouse movement, n/m for left/right click, , for scroll down, . for scroll up
 (deflayer mouse
   XX XX XX XX XX XX @ms← @ms↓ @ms↑ @ms→
   XX XX XX XX XX XX XX XX XX XX
-  XX XX XX XX XX mlft mrgt XX XX XX
+  XX XX XX XX XX mlft mrgt @mwd @mwu XX
   @tobase  ;; click caps to exit mouse layer
   XX
 )
