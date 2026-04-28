@@ -16,12 +16,12 @@
 )
 
 (defvar
-  tot 220  ;; tot=time out tap
+  tot 280  ;; tot=time out tap (matches ZMK tapping-term-ms)
 )
 
-;; Template for homerow mods
+;; Template for homerow mods (tap-hold-release = ZMK balanced flavor)
 (deftemplate homerowmod (timeouttap timeouthold keytap keyhold)
-  (tap-hold $timeouttap $timeouthold
+  (tap-hold-release $timeouttap $timeouthold
     (multi $keytap @.tp)
     $keyhold
   )
@@ -37,15 +37,19 @@
 )
 
 (defalias
-  ;; Typing layer switch - activates typing layer and returns to base after 55ms idle
+  ;; Typing layer switch - activates typing layer and returns to base after 150ms idle
+  ;; 150ms matches ZMK's require-prior-idle-ms
   .tp (switch
     () (multi
       (layer-switch typing)
-      (on-idle 55 tap-vkey to-base)
+      (on-idle 150 tap-vkey to-base)
     ) break
   )
-  ;; Spacebar exits typing layer to allow uppercase after sentence breaks
-  .spc-typing (multi (layer-switch base) spc)
+  ;; Spacebar: tap=space (resets to base), hold=nav layer (240ms matches ZMK lt tapping-term)
+  .spc (tap-hold-release 240 240
+    (multi (layer-switch base) spc)
+    (layer-while-held nav)
+  )
 
   ;; Mouse layer activation - click caps to switch to mouse control
   mse (layer-switch mouse)
@@ -70,18 +74,18 @@
   ms→ (movemouse-right 6 3)
 )
 
-;; Base layer with homerow mods - proper GACS timing
+;; Base layer with homerow mods - uniform timing matching ZMK
 (deflayer base
-  (t! homerowmodfiltered $tot 450 a lmet (s))  ;; Meta - slowest (least used)
-  (t! homerowmodfiltered $tot 400 s lalt (a))  ;; Alt
-  (t! homerowmod $tot 300 d lctl)  ;; Ctrl
-  (t! homerowmod $tot 160 f lsft)  ;; Shift - fastest (most used)
+  (t! homerowmodfiltered $tot $tot a lmet (s))  ;; Meta
+  (t! homerowmodfiltered $tot $tot s lalt (a))  ;; Alt
+  (t! homerowmod $tot $tot d lctl)  ;; Ctrl
+  (t! homerowmod $tot $tot f lsft)  ;; Shift
   g
   h
-  (t! homerowmod $tot 160 j rsft)  ;; Shift - fastest (most used)
-  (t! homerowmodfiltered $tot 300 k rctl (o))  ;; Ctrl
-  (t! homerowmodfiltered $tot 400 l ralt (i))  ;; Alt
-  (t! homerowmod $tot 450 ; rmet)  ;; Meta - slowest (least used)
+  (t! homerowmod $tot $tot j lsft)  ;; Shift
+  (t! homerowmodfiltered $tot $tot k lctl (o))  ;; Ctrl
+  (t! homerowmodfiltered $tot $tot l ralt (i))  ;; Alt (ralt = mod3)
+  (t! homerowmod $tot $tot ; lmet)  ;; Meta
 
   (multi q @.tp) (multi w @.tp) (multi e @.tp) (multi r @.tp) (multi t @.tp)
   (multi y @.tp) (multi u @.tp) (multi i @.tp) (multi o @.tp) (multi p @.tp)
@@ -90,7 +94,7 @@
   (multi b @.tp) (multi n @.tp) (multi m @.tp) (multi , @.tp) (multi . @.tp) (multi / @.tp)
 
   @mse  ;; caps: hold=mouse layer
-  @.spc-typing
+  @.spc
 )
 
 ;; Typing layer - no homerow mods, just plain letters
@@ -99,13 +103,21 @@
   q w e r t y u i o p
   z x c v b n m , . /
   @mse  ;; caps: hold=mouse layer
-  spc
+  @.spc
+)
+
+;; Nav layer - hold space to activate, hjkl=arrows, mirrors ZMK nav layer
+(deflayer nav
+  XX   XX   XX   XX   XX   left  down  up    rght XX
+  XX   XX   XX   XX   XX   XX    XX    XX    XX   XX
+  XX   XX   XX   XX   XX   home  pgdn  pgup  end  ins
+  XX   @.spc
 )
 
 ;; Mouse control layer - click caps lock to exit
 ;; j/k/l/; for mouse movement, n/m for left/right click, , for scroll down, . for scroll up
 (deflayer mouse
-  XX XX XX XX XX XX @ms← @ms↓ @ms↑ @ms→
+  XX XX XX XX XX @ms← @ms↓ @ms↑ @ms→ XX
   XX XX XX XX XX XX XX XX XX XX
   XX XX XX XX XX mlft mrgt @mwd @mwu XX
   @tobase  ;; click caps to exit mouse layer
